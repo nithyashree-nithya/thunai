@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thunai</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 0; padding: 2rem 1.25rem; line-height: 1.5; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+</style>
+</head>
+<body>
+<h1 id="h">Thank you</h1>
+<p id="p">Your PayPal approval is received. You can close this page. The machine finishes your order on its own screen.</p>
+<script>
+  if (location.search.indexOf("cancelled") > -1) {
+    document.getElementById("h").textContent = "Payment cancelled";
+    document.getElementById("p").textContent = "Nothing was charged. You can go back to the machine and try again.";
+  }
+</script>
+</body>
+</html>

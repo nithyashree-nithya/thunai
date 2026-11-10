@@ -1,0 +1,22 @@
+{
+  "name": "thunai",
+  "version": "1.0.0",
+  "description": "Cross-border PayPal checkout for vending machines, with round-up giving to local children's homes.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test",
+    "payout": "node scripts/run-payout.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ag-grid-community": "^36.3.0",
+    "dotenv": "^18.0.10",
+    "express": "^4.22.3",
+    "qrcode": "^1.5.4"
+  }
+}

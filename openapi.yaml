@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Thunai API
+  version: 1.0.0
+  description: >
+    Cross-border PayPal checkout for vending machines, with round-up giving to local children's homes.
+    Import this file into APIMatic to generate SDKs and a documentation portal, or into Postman.
+servers:
+  - url: http://localhost:3000
+    description: Local
+paths:
+  /api/config:
+    get:
+      summary: Mode, exchange rate and product list
+      operationId: getConfig
+      responses:
+        "200":
+          description: Configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Config" }
+  /api/ngos:
+    get:
+      summary: Partner organisations with funding progress
+      operationId: listPartners
+      responses:
+        "200":
+          description: Partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Partner" }
+  /api/stats:
+    get:
+      summary: Totals across all orders
+      operationId: getStats
+      responses:
+        "200":
+          description: Totals
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Stats" }
+  /api/ledger:
+    get:
+      summary: Gift ledger, newest first
+      operationId: listLedger
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        "200":
+          description: Ledger rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LedgerRow" }
+  /api/orders:
+    post:
+      summary: Create a PayPal order for a vending purchase
+      description: The server prices the order. Amounts in the request are never trusted.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderRequest" }
+      responses:
+        "201":
+          description: Order created. Show approveUrl as a QR code.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreatedOrder" }
+        "400": { $ref: "#/components/responses/Error" }
+  /api/orders/{id}:
+    get:
+      summary: Check whether the customer approved the order
+      operationId: getOrder
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Order status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderStatus" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/orders/{id}/capture:
+    post:
+      summary: Capture an approved order and record the gift
+      operationId: captureOrder
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Receipt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipt: { $ref: "#/components/schemas/Receipt" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/payouts/pending:
+    get:
+      summary: Gifts waiting to be paid out, by partner
+      operationId: listPendingPayouts
+      responses:
+        "200":
+          description: Pending amounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PendingPayout" }
+  /api/payouts/preview:
+    get:
+      summary: Preview the PayPal Payouts batch
+      operationId: previewPayouts
+      security: [{ adminToken: [] }]
+      responses:
+        "200":
+          description: Batch
+          content:
+            application/json:
+              schema: { type: object }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/payouts/send:
+    post:
+      summary: Send the pending payout batch through PayPal Payouts
+      operationId: sendPayouts
+      security: [{ adminToken: [] }]
+      responses:
+        "200":
+          description: Batch sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batchId: { type: string }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PendingPayout" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+components:
+  securitySchemes:
+    adminToken:
+      type: apiKey
+      in: header
+      name: x-admin-token
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+  schemas:
+    Product:
+      type: object
+      properties:
+        id: { type: string, example: A1 }
+        name: { type: string, example: Filter coffee }
+        price: { type: number, description: Price in INR, example: 30 }
+    Config:
+      type: object
+      properties:
+        mode: { type: string, enum: [mock, sandbox, live] }
+        rate: { type: number, description: INR per US dollar, example: 90 }
+        currency: { type: string, example: USD }
+        mealInr: { type: number, example: 25 }
+        products:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+    Partner:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string }
+        need: { type: string }
+        goal: { type: number }
+        raised: { type: number }
+    Stats:
+      type: object
+      properties:
+        mode: { type: string }
+        rate: { type: number }
+        orders: { type: integer }
+        salesInr: { type: number }
+        giftsInr: { type: number }
+        matchInr: { type: number }
+        totalGivenInr: { type: number }
+        meals: { type: integer }
+        pendingInr: { type: number }
+    CreateOrderRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, qty]
+            properties:
+              id: { type: string, example: A1 }
+              qty: { type: integer, minimum: 1, maximum: 10 }
+        roundup: { type: boolean, default: false }
+        ngoId: { type: string, example: n1, description: Required when roundup is true }
+        intl: { type: boolean, default: true, description: PayPal account is held outside India }
+    Price:
+      type: object
+      properties:
+        sub: { type: number }
+        gift: { type: number }
+        match: { type: number }
+        fee: { type: number }
+        saved: { type: number }
+        totalInr: { type: number }
+        usd: { type: number }
+    CreatedOrder:
+      type: object
+      properties:
+        id: { type: string }
+        ref: { type: string }
+        approveUrl: { type: string, format: uri }
+        mode: { type: string }
+        price: { $ref: "#/components/schemas/Price" }
+    OrderStatus:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [CREATED, APPROVED, COMPLETED] }
+        receipt:
+          nullable: true
+          allOf: [{ $ref: "#/components/schemas/Receipt" }]
+    Receipt:
+      type: object
+      properties:
+        id: { type: string }
+        orderId: { type: string }
+        captureId: { type: string, nullable: true }
+        time: { type: string, format: date-time }
+        sub: { type: number }
+        gift: { type: number }
+        match: { type: number }
+        saved: { type: number }
+        usd: { type: number }
+        ngo: { type: string, nullable: true }
+    LedgerRow:
+      type: object
+      properties:
+        id: { type: string }
+        time: { type: string, format: date-time }
+        ngoId: { type: string, nullable: true }
+        ngoName: { type: string, nullable: true }
+        sub: { type: number }
+        gift: { type: number }
+        match: { type: number }
+        usd: { type: number }
+        payoutStatus: { type: string, enum: [none, pending, sent] }
+        demo: { type: boolean }
+    PendingPayout:
+      type: object
+      properties:
+        ngoId: { type: string }
+        name: { type: string }
+        rows: { type: integer }
+        inr: { type: number }
+        usd: { type: number }

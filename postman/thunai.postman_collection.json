@@ -1,0 +1,479 @@
+{
+  "info": {
+    "name": "Thunai API",
+    "description": "Requests for the Thunai server, plus direct PayPal sandbox calls. Run them top to bottom. In demo mode (no PayPal keys) use the 'Mock approve' request. In sandbox mode, open approveUrl and approve with a sandbox buyer account.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Thunai server",
+      "item": [
+        {
+          "name": "Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ok', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('has products', () => pm.expect(pm.response.json().products.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "config"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('orderId', b.id);",
+                  "pm.collectionVariables.set('approveUrl', b.approveUrl);",
+                  "pm.test('server priced it', () => pm.expect(b.price.totalInr).to.eql(80));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"id\": \"A1\",\n      \"qty\": 1\n    },\n    {\n      \"id\": \"A2\",\n      \"qty\": 1\n    }\n  ],\n  \"roundup\": true,\n  \"ngoId\": \"n1\",\n  \"intl\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get order status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('has status', () => pm.expect(pm.response.json().status).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mock approve (demo mode only)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mock/approve/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mock",
+                "approve",
+                "{{orderId}}"
+              ]
+            },
+            "description": "Simulates the customer approving in PayPal. Not available when PayPal keys are set."
+          }
+        },
+        {
+          "name": "Capture order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('captured', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/capture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "capture"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ledger",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ledger?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ledger"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Partners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ngos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ngos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pending payouts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payouts/pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payouts",
+                "pending"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preview payout batch (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-admin-token",
+                "value": "{{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payouts/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payouts",
+                "preview"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send payouts (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-admin-token",
+                "value": "{{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payouts/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payouts",
+                "send"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PayPal sandbox direct",
+      "description": "Calls PayPal directly with your sandbox credentials. Useful to check your keys before running the server. PayPal also publishes an official API collection in Postman's public workspace.",
+      "item": [
+        {
+          "name": "Get access token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('token returned', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('paypalToken', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{paypalClientId}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{paypalClientSecret}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+              "protocol": "https",
+              "host": [
+                "api-m",
+                "sandbox",
+                "paypal",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "oauth2",
+                "token"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "pm.collectionVariables.set('paypalOrderId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paypalToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intent\": \"CAPTURE\",\n  \"purchase_units\": [\n    {\n      \"reference_id\": \"machine-T2-014\",\n      \"description\": \"Filter coffee + round-up gift\",\n      \"amount\": {\n        \"currency_code\": \"USD\",\n        \"value\": \"0.67\"\n      }\n    }\n  ],\n  \"payment_source\": {\n    \"paypal\": {\n      \"experience_context\": {\n        \"brand_name\": \"Thunai\",\n        \"shipping_preference\": \"NO_SHIPPING\",\n        \"user_action\": \"PAY_NOW\",\n        \"return_url\": \"{{baseUrl}}/thanks.html\",\n        \"cancel_url\": \"{{baseUrl}}/thanks.html?cancelled=1\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+              "protocol": "https",
+              "host": [
+                "api-m",
+                "sandbox",
+                "paypal",
+                "com"
+              ],
+              "path": [
+                "v2",
+                "checkout",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Capture order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paypalToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "https://api-m.sandbox.paypal.com/v2/checkout/orders/{{paypalOrderId}}/capture",
+              "protocol": "https",
+              "host": [
+                "api-m",
+                "sandbox",
+                "paypal",
+                "com"
+              ],
+              "path": [
+                "v2",
+                "checkout",
+                "orders",
+                "{{paypalOrderId}}",
+                "capture"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "approveUrl",
+      "value": ""
+    },
+    {
+      "key": "paypalToken",
+      "value": ""
+    },
+    {
+      "key": "paypalOrderId",
+      "value": ""
+    }
+  ]
+}

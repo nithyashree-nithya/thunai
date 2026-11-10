@@ -1,0 +1,42 @@
+# Render Blueprint: deploys Thunai as one web service.
+# In Render: New > Blueprint, pick your GitHub repo, then fill the secret values when asked.
+services:
+  - type: web
+    name: thunai
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false   # you enter this in the Render dashboard
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false   # you enter this in the Render dashboard
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: FX_RATE_INR_PER_USD
+        value: 90
+      - key: SEED_DEMO
+        value: "true"
+      # BASE_URL is not needed. Render provides RENDER_EXTERNAL_URL and the server uses it.
+      # The free plan keeps data in a temporary file that resets on redeploy and restart.
+      # For real use, move the store to Render Postgres.
+
+  # Optional: send the monthly payout batch automatically (paid cron job on Render).
+  # Uncomment, then set BASE_URL to your web service URL and copy the same ADMIN_TOKEN.
+  # - type: cron
+  #   name: thunai-monthly-payout
+  #   runtime: node
+  #   schedule: "0 4 1 * *"
+  #   buildCommand: npm ci
+  #   startCommand: node scripts/run-payout.js
+  #   envVars:
+  #     - key: BASE_URL
+  #       sync: false
+  #     - key: ADMIN_TOKEN
+  #       sync: false

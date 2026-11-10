@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thunai Operator Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F1F5F3; --surface: #FFFFFF; --ink: #0F2B2E; --muted: #4A5F5E; --line: #CFDAD6;
+  --accent: #E89B00; --on-accent: #0F2B2E; --jade: #17695A; --jade-soft: #DDEFEA; --alert: #A33A1F; --focus: #1B5FD6;
+  --machine: #0F2B2E; --machine-fg: #EAF2EE;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Noto Sans', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0A181A; --surface: #112326; --ink: #E8F0EC; --muted: #9DB5B1; --line: #26413F;
+    --accent: #F2B32E; --on-accent: #0A181A; --jade: #5AD0B4; --jade-soft: #14352F; --alert: #F08C6E; --focus: #7FB0FF;
+    --machine: #07100F; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); line-height: 1.55;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px)) 3rem;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 72rem; margin: 0 auto; }
+h1, h2 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+h1 { font-size: 1.8rem; }
+h2 { font-size: 1.2rem; }
+.muted { color: var(--muted); }
+header { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: flex-end; padding: 1.2rem 0 1rem; }
+a { color: var(--jade); }
+.bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
+.bar label { display: block; font-size: 0.8rem; color: var(--muted); }
+input[type="password"] { font: inherit; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.45rem 0.6rem; min-height: 2.4rem; width: 12rem; max-width: 100%; }
+.btn { font: inherit; font-weight: 600; cursor: pointer; border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 0.5rem 1rem; min-height: 2.5rem; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.8rem; margin-top: 0.5rem; }
+.tile { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem; }
+.tile span { display: block; font-size: 0.82rem; color: var(--muted); }
+.tile b { display: block; font-family: var(--font-display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.tile.good b { color: var(--jade); }
+section { margin-top: 1.6rem; }
+.head { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
+.grid { width: 100%; min-width: 0; }
+.notice { border: 1.5px dashed var(--line); border-radius: 8px; padding: 0.55rem 0.85rem; font-size: 0.9rem; color: var(--muted); background: var(--surface); }
+.err { color: var(--alert); }
+pre { margin: 0.6rem 0 0; font-family: var(--font-mono); font-size: 0.82rem; background: var(--machine); color: var(--machine-fg); padding: 0.9rem; border-radius: 10px; overflow-x: auto; max-width: 100%; }
+.pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.05rem 0.55rem; border-radius: 999px; }
+.pill.sent { background: var(--jade-soft); color: var(--jade); }
+.pill.pending { background: var(--accent); color: var(--on-accent); }
+.pill.none { border: 1px dashed var(--muted); color: var(--muted); }
+.meter { height: 0.6rem; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 0.7rem; }
+.meter i { display: block; height: 100%; background: var(--jade); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Thunai Operator Dashboard</h1>
+      <p class="muted" style="margin:0.2rem 0 0"><a href="/">Back to the machine</a> · <span id="mode">loading…</span></p>
+    </div>
+    <div class="bar">
+      <div>
+        <label for="token">Admin token</label>
+        <input id="token" type="password" autocomplete="off" placeholder="ADMIN_TOKEN">
+      </div>
+      <button class="btn" id="refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <div class="tiles" id="tiles" aria-live="polite"></div>
+
+  <section aria-labelledby="h-partners">
+    <div class="head"><h2 id="h-partners">Partner funding</h2><span class="muted">Sample partners. Verify each before launch.</span></div>
+    <div id="g-partners" class="grid"></div>
+  </section>
+
+  <section aria-labelledby="h-pending">
+    <div class="head">
+      <h2 id="h-pending">Waiting for payout</h2>
+      <div class="bar">
+        <button class="btn" id="preview" type="button">Preview batch</button>
+        <button class="btn primary" id="send" type="button" disabled>Send payouts</button>
+      </div>
+    </div>
+    <p class="notice" id="batch-note">Payouts need the admin token. Preview first, then send.</p>
+    <div id="g-pending" class="grid" style="margin-top:0.6rem"></div>
+    <pre id="batch" hidden tabindex="0" aria-label="Payout batch payload"></pre>
+  </section>
+
+  <section aria-labelledby="h-ledger">
+    <div class="head"><h2 id="h-ledger">Gift ledger</h2><span class="muted">Newest first. Demo rows are sample data.</span></div>
+    <div id="g-ledger" class="grid"></div>
+  </section>
+</div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<script src="/vendor/ag-grid/ag-grid-community.min.js"></script>
+<script src="/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thunai</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a vending machine on the left, the order and its giving on the right; three more tabs explain offers, where gifts go, and how an operator joins. */
+:root {
+  --paper: #F1F5F3;
+  --surface: #FFFFFF;
+  --ink: #0F2B2E;
+  --muted: #4A5F5E;
+  --line: #CFDAD6;
+  --accent: #E89B00;
+  --on-accent: #0F2B2E;
+  --jade: #17695A;
+  --jade-soft: #DDEFEA;
+  --alert: #A33A1F;
+  --machine: #0F2B2E;
+  --machine-fg: #EAF2EE;
+  --machine-line: #2B4A4D;
+  --focus: #1B5FD6;
+  --font-display: 'Bricolage Grotesque', 'Noto Sans Tamil', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-body: 'Noto Sans', 'Noto Sans Tamil', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0A181A; --surface: #112326; --ink: #E8F0EC; --muted: #9DB5B1; --line: #26413F;
+    --accent: #F2B32E; --on-accent: #0A181A; --jade: #5AD0B4; --jade-soft: #14352F; --alert: #F08C6E;
+    --machine: #07100F; --machine-fg: #EAF2EE; --machine-line: #26413F; --focus: #7FB0FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0A181A; --surface: #112326; --ink: #E8F0EC; --muted: #9DB5B1; --line: #26413F;
+  --accent: #F2B32E; --on-accent: #0A181A; --jade: #5AD0B4; --jade-soft: #14352F; --alert: #F08C6E;
+  --machine: #07100F; --machine-fg: #EAF2EE; --machine-line: #26413F; --focus: #7FB0FF;
+  color-scheme: dark;
+}
+html { font-size: 100%; }
+html[data-size="l"] { font-size: 118%; }
+html[data-size="xl"] { font-size: 136%; }
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 3rem;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: 0.5rem; top: -4rem; background: var(--accent); color: var(--on-accent); padding: 0.5rem 1rem; border-radius: 6px; z-index: 20; }
+.skip:focus { top: 0.5rem; }
+.wrap { max-width: 70rem; margin-inline: auto; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; }
+
+header.top { padding-block: 1.1rem 0.9rem; display: flex; flex-wrap: wrap; gap: 0.9rem 1.5rem; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.brand svg { flex: none; }
+.brand b { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.01em; display: block; line-height: 1; }
+.brand span { font-size: 0.85rem; color: var(--muted); display: block; margin-top: 0.15rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; }
+.controls label, .controls .lbl { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 0.15rem; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; color: var(--ink); font: inherit; padding: 0.35rem 0.7rem; min-width: 2.4rem; min-height: 2.4rem; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+select, input[type="number"] {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; padding: 0.45rem 0.6rem; min-height: 2.4rem; max-width: 100%;
+}
+
+.notice { border: 1.5px dashed var(--line); border-radius: 8px; padding: 0.55rem 0.85rem; font-size: 0.9rem; color: var(--muted); background: var(--surface); }
+
+nav.tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; border-bottom: 2px solid var(--line); }
+nav.tabs button {
+  font: inherit; font-weight: 600; background: transparent; border: 0; color: var(--muted); padding: 0.7rem 1rem; cursor: pointer; min-height: 2.75rem;
+  border-bottom: 4px solid transparent; margin-bottom: -2px;
+}
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+section.panel { padding-top: 1.5rem; }
+.lede { max-width: 42rem; color: var(--muted); margin-top: 0.5rem; }
+
+.impact { display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; align-items: baseline; margin-top: 1.25rem; padding: 0.8rem 1rem; background: var(--jade-soft); border-radius: 10px; color: var(--ink); }
+.impact strong { font-family: var(--font-display); font-size: 1.5rem; color: var(--jade); }
+
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1.25rem; margin-top: 1.25rem; align-items: start; }
+.card { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 1.1rem; min-width: 0; }
+.machine { background: var(--machine); color: var(--machine-fg); border-radius: 14px; padding: 1rem; min-width: 0; border: 1.5px solid var(--machine-line); }
+.machine .screen { font-family: var(--font-mono); font-size: 0.85rem; background: #06100F; color: #8FE3C8; border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.9rem; border: 1px solid var(--machine-line); }
+.slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+.slot {
+  text-align: left; font: inherit; color: var(--machine-fg); background: transparent; border: 1.5px solid var(--machine-line); border-radius: 10px; padding: 0.7rem; cursor: pointer; display: grid; gap: 0.15rem; min-height: 6.2rem; align-content: space-between;
+}
+.slot:hover { border-color: var(--accent); }
+.slot .code { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); }
+.slot .nm { font-weight: 600; }
+.slot .pr { font-variant-numeric: tabular-nums; color: #B9CDC8; }
+.tray { margin-top: 0.9rem; height: 0.7rem; border-radius: 4px; background: #040B0B; border: 1px solid var(--machine-line); }
+
+.line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.line .qty { display: inline-flex; align-items: center; gap: 0.4rem; }
+.qty button, .btn { font: inherit; cursor: pointer; }
+.qty button { width: 2.4rem; height: 2.4rem; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 700; }
+.btn { border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 0.6rem 1.1rem; min-height: 2.75rem; font-weight: 600; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.small { padding: 0.35rem 0.75rem; min-height: 2.3rem; font-size: 0.9rem; }
+.stack { display: grid; gap: 0.9rem; }
+.row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.switch { display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; }
+.switch input { width: 1.4rem; height: 1.4rem; margin-top: 0.15rem; accent-color: var(--jade); flex: none; }
+dl.sum { margin: 0; display: grid; gap: 0.3rem; }
+dl.sum div { display: flex; justify-content: space-between; gap: 1rem; }
+dl.sum dt { color: var(--muted); }
+dl.sum dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+dl.sum .big { border-top: 2px solid var(--ink); padding-top: 0.5rem; margin-top: 0.3rem; font-weight: 700; font-size: 1.15rem; }
+dl.sum .good dd, dl.sum .good dt { color: var(--jade); }
+.tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--jade-soft); color: var(--jade); }
+.tag.sample { background: transparent; border: 1px dashed var(--muted); color: var(--muted); }
+.qr { width: min(100%, 14rem); aspect-ratio: 1; color: var(--ink); background: #fff; padding: 0.6rem; border-radius: 8px; border: 1.5px solid var(--line); }
+.qr svg { width: 100%; height: 100%; display: block; }
+.receipt { border: 2px dashed var(--line); border-radius: 10px; padding: 1rem; background: var(--paper); }
+
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1.1rem; margin-top: 1.25rem; }
+.offer h3 { margin-bottom: 0.35rem; }
+.offer .big { font-family: var(--font-display); font-size: 2.2rem; color: var(--jade); line-height: 1; }
+.bar { height: 0.7rem; border-radius: 999px; background: var(--line); overflow: hidden; margin: 0.6rem 0 0.35rem; }
+.bar i { display: block; height: 100%; background: var(--jade); border-radius: 999px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.8rem; }
+.fields label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.2rem; }
+.fields input { width: 100%; }
+.result { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.8rem; margin-top: 1rem; }
+.result div { background: var(--paper); border-radius: 10px; padding: 0.8rem; }
+.result b { display: block; font-family: var(--font-display); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; max-width: 100%; }
+pre { margin: 0; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.5; background: var(--machine); color: var(--machine-fg); padding: 0.9rem; border-radius: 10px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+ol.steps { margin: 0.6rem 0 0; padding-left: 1.3rem; display: grid; gap: 0.4rem; }
+.mt { margin-top: 1.25rem; }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width 0.5s ease; } }
+
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+:root { color-scheme: light; }
+.qr img { width: 100%; height: 100%; display: block; }
+.err { border: 1.5px solid var(--alert); color: var(--alert); border-radius: 8px; padding: 0.5rem 0.8rem; }
+a { color: var(--jade); }
+</style>
+</head>
+<body>
+
+
+<a class="skip" href="#main">Skip to content</a>
+<div id="live" class="sr-only" aria-live="polite" role="status"></div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+        <rect width="44" height="44" rx="10" fill="var(--ink)"/>
+        <g fill="var(--accent)">
+          <circle cx="12" cy="12" r="2.2"/><circle cx="22" cy="12" r="2.2"/><circle cx="32" cy="12" r="2.2"/>
+          <circle cx="12" cy="22" r="2.2"/><circle cx="32" cy="22" r="2.2"/>
+          <circle cx="12" cy="32" r="2.2"/><circle cx="22" cy="32" r="2.2"/><circle cx="32" cy="32" r="2.2"/>
+        </g>
+        <circle cx="22" cy="22" r="4.2" fill="var(--paper)"/>
+      </svg>
+      <div>
+        <b>Thunai <span style="display:inline;font-size:1rem;font-weight:400;color:var(--muted)">துணை</span></b>
+        <span data-i18n="tagline">Pay the world's way. Give back locally.</span>
+      </div>
+    </div>
+    <div class="controls">
+      <a class="btn small" href="/dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center">Operator dashboard</a>
+      <div>
+        <label for="lang" data-i18n="language">Language</label>
+        <select id="lang">
+          <option value="en">English</option>
+          <option value="ta">தமிழ்</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+      </div>
+      <div>
+        <span class="lbl" id="size-lbl" data-i18n="size">Text size</span>
+        <div class="seg" role="group" aria-labelledby="size-lbl">
+          <button type="button" data-size="m" aria-pressed="true" aria-label="Normal text">A</button>
+          <button type="button" data-size="l" aria-pressed="false" aria-label="Large text">A+</button>
+          <button type="button" data-size="xl" aria-pressed="false" aria-label="Largest text">A++</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <p class="notice" id="mode-note" data-i18n="proto_mock" role="status">Demo mode.</p>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-vending" aria-controls="panel-vending" aria-selected="true" data-tab="vending" data-i18n="tab_vending">Vending checkout</button>
+    <button role="tab" id="tab-offers" aria-controls="panel-offers" aria-selected="false" tabindex="-1" data-tab="offers" data-i18n="tab_offers">Offers</button>
+    <button role="tab" id="tab-giving" aria-controls="panel-giving" aria-selected="false" tabindex="-1" data-tab="giving" data-i18n="tab_giving">Giving</button>
+    <button role="tab" id="tab-vendors" aria-controls="panel-vendors" aria-selected="false" tabindex="-1" data-tab="vendors" data-i18n="tab_vendors">Vendors</button>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <!-- VENDING -->
+    <section class="panel" id="panel-vending" role="tabpanel" aria-labelledby="tab-vending">
+      <h2 data-i18n="h_vending">Pick a snack. Pay with PayPal. Give the change.</h2>
+      <p class="lede" data-i18n="lede_vending">A traveller with a PayPal account pays at a local vending machine. The small change from rounding up goes to a nearby children's home, and the machine's sponsor adds half again.</p>
+      <p class="impact" aria-live="off"><span data-i18n="impact">Raised through this machine this month</span> <strong id="impact-amt" class="num"></strong> <span id="impact-meals" class="muted"></span> <span class="tag sample">includes demo data</span></p>
+      <div class="split">
+        <div class="machine">
+          <div class="screen" id="screen" aria-hidden="true"></div>
+          <div class="slots" id="slots"></div>
+          <div class="tray" aria-hidden="true"></div>
+        </div>
+        <div class="card" id="order"></div>
+      </div>
+    </section>
+
+    <!-- OFFERS -->
+    <section class="panel" id="panel-offers" role="tabpanel" aria-labelledby="tab-offers" hidden>
+      <h2 data-i18n="h_offers">Offers for paying across borders</h2>
+      <p class="lede">These are proposed offers PayPal and vendors could fund. They are examples for the prototype, not live promotions.</p>
+      <div class="grid3">
+        <article class="card offer">
+          <span class="tag sample">Example offer</span>
+          <p class="big mt">0%</p>
+          <h3>Currency markup on first 3 purchases</h3>
+          <p class="muted">For PayPal accounts held outside India. Removes the extra margin cards often add when a foreign vendor charges in rupees.</p>
+        </article>
+        <article class="card offer">
+          <span class="tag sample">Example offer</span>
+          <p class="big mt">+50%</p>
+          <h3>Sponsor match on round-ups</h3>
+          <p class="muted">Every rupee you round up is matched by half a rupee from the machine's sponsor, paid to the same children's home.</p>
+        </article>
+        <article class="card offer">
+          <span class="tag sample">Example offer</span>
+          <p class="big mt">1 receipt</p>
+          <h3>One receipt for purchase and gift</h3>
+          <p class="muted">Shows the vendor's share and the donation separately, so a traveller can keep it for their own records.</p>
+        </article>
+      </div>
+      <div class="card mt">
+        <h3>What would a trip save?</h3>
+        <p class="muted">Change the assumptions to match your trip.</p>
+        <div class="fields mt">
+          <div><label for="c-amt">Average purchase (USD)</label><input id="c-amt" type="number" min="0" step="1" value="6"></div>
+          <div><label for="c-cnt">Purchases during the trip</label><input id="c-cnt" type="number" min="0" step="1" value="12"></div>
+          <div><label for="c-mk">Usual card markup (%)</label><input id="c-mk" type="number" min="0" step="0.1" value="3.5"></div>
+        </div>
+        <div class="result" aria-live="polite">
+          <div><span class="muted">Purchases covered by the offer</span><b id="r-cov">3</b></div>
+          <div><span class="muted">Markup you avoid</span><b id="r-save">$0.63</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GIVING -->
+    <section class="panel" id="panel-giving" role="tabpanel" aria-labelledby="tab-giving" hidden>
+      <h2 data-i18n="h_giving">Where the round-ups go</h2>
+      <p class="lede">Partners are samples. Before launch, each one is verified, and any that receive foreign-sourced money need a valid FCRA registration. Check requirements with a legal advisor.</p>
+      <div class="grid3" id="ngos"></div>
+      <div class="card mt">
+        <h3>Waiting for the next payout</h3>
+        <p class="muted">Gifts collected so far are sent to each partner in one batch each month. The operator reviews and sends the batch from the dashboard.</p>
+        <div class="scroll mt" id="payout"></div>
+      </div>
+      <div class="card mt">
+        <h3>Gift ledger</h3>
+        <div class="scroll mt" id="ledger"></div>
+      </div>
+    </section>
+
+    <!-- VENDORS -->
+    <section class="panel" id="panel-vendors" role="tabpanel" aria-labelledby="tab-vendors" hidden>
+      <h2 data-i18n="h_vendors">Bring your machines on</h2>
+      <p class="lede">Vending operators already take cash, UPI and cards. Adding PayPal opens the machine to travellers whose money lives in a PayPal balance, and the round-up gift turns each of those sales into a local donation.</p>
+      <div class="split">
+        <div class="card">
+          <h3>Estimate your month</h3>
+          <p class="muted">Every figure is an assumption you can change.</p>
+          <div class="fields mt">
+            <div><label for="v-m">Machines</label><input id="v-m" type="number" min="0" value="20"></div>
+            <div><label for="v-t">Sales per machine per day</label><input id="v-t" type="number" min="0" value="40"></div>
+            <div><label for="v-a">Average sale (₹)</label><input id="v-a" type="number" min="0" value="35"></div>
+            <div><label for="v-s">Paid with PayPal (%)</label><input id="v-s" type="number" min="0" max="100" value="5"></div>
+            <div><label for="v-o">Who choose to round up (%)</label><input id="v-o" type="number" min="0" max="100" value="60"></div>
+            <div><label for="v-r">Average round-up (₹)</label><input id="v-r" type="number" min="0" value="6"></div>
+          </div>
+          <div class="result" aria-live="polite">
+            <div><span class="muted">New PayPal sales per month</span><b id="e-sales">–</b></div>
+            <div><span class="muted">Given to local partners per month</span><b id="e-give">–</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Go live in four steps</h3>
+          <ol class="steps">
+            <li>Create a PayPal developer app and test in the sandbox.</li>
+            <li>Keep the client secret on your server. The machine and this page never hold it.</li>
+            <li>Create an order for each sale, show the code, and capture it when the customer approves.</li>
+            <li>Record the round-up portion, then pay partners monthly in a batch.</li>
+          </ol>
+          <p class="muted mt">Which currencies, countries and payout features are available depends on your PayPal account type. Check PayPal's developer documentation first.</p>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="row" style="justify-content:space-between">
+          <h3>Create an order (sandbox)</h3>
+          <button class="btn small" id="copy-order" type="button">Copy snippet</button>
+        </div>
+        <div class="mt"><pre id="order-code" tabindex="0" aria-label="Sample request">POST https://api-m.sandbox.paypal.com/v2/checkout/orders
+Authorization: Bearer &lt;access_token from your server&gt;
+Content-Type: application/json
+
+{
+  "intent": "CAPTURE",
+  "purchase_units": [{
+    "reference_id": "machine-T2-014",
+    "description": "Filter coffee + round-up gift",
+    "amount": { "currency_code": "USD", "value": "0.67" }
+  }]
+}
+
+# After the customer approves:
+POST https://api-m.sandbox.paypal.com/v2/checkout/orders/{id}/capture</pre></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+
+<script src="/app.js"></script>
+</body>
+</html>
